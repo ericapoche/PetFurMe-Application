@@ -111,7 +111,7 @@ const Appointment = ({ navigation, route }) => {
         throw new Error('No user ID available');
       }
 
-      const url = `http://${SERVER_IP}/PetFurMe-Application/api/appointments/get_appointments.php?user_id=${userId}`;
+      const url = `https://app.petfurme.shop/PetFurMe-Application/api/appointments/get_appointments.php?user_id=${userId}`;
       console.log('\n=== Fetching Appointments ===');
       console.log('User ID:', userId);
       console.log('Request URL:', url);
@@ -234,7 +234,7 @@ const Appointment = ({ navigation, route }) => {
       console.log('\n=== Cancel Appointment Debug ===');
       console.log('Starting cancellation for appointment:', appointmentId);
       
-      const url = `http://${SERVER_IP}/PetFurMe-Application/api/appointments/update_status.php`;
+      const url = `https://app.petfurme.shop/PetFurMe-Application/api/appointments/update_status.php`;
       console.log('Cancel API URL:', url);
 
       const requestBody = {

@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logActivity } from '../utils/activityLogger';
 import axios from 'axios';
 
-const API_BASE_URL = `http://${SERVER_IP}`;
+const API_BASE_URL = 'https://app.petfurme.shop';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const CustomDrawerContent = ({ navigation, state }) => {

@@ -18,13 +18,15 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.petfurme.app"
+      "bundleIdentifier": "com.petfurme.app",
+      "icon": "./src/assets/images/icon.png"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
+      "icon": "./src/assets/images/icon.png",
       "package": "app.petfurme.shop"
     },
     "web": {

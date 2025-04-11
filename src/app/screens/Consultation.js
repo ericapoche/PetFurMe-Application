@@ -362,24 +362,30 @@ const Consultation = ({ navigation, route }) => {
     try {
       setLoading(true);
       
+      console.log('\n=== Save Appointment Debug ===');
+      
       // Determine the reason for visit - ensure it's a non-empty string
       let reasonForVisit = '';
       
       if (reasons && reasons.length > 0) {
-        // Convert the array to a JSON string instead of comma-separated values
         reasonForVisit = JSON.stringify(reasons);
       } else if (selectedConsultationReasons && selectedConsultationReasons.length > 0) {
-        // Convert the array to a JSON string
         reasonForVisit = JSON.stringify(selectedConsultationReasons);
       } else if (consultationReason && consultationReason.trim() !== '') {
         reasonForVisit = consultationReason;
       } else {
-        // Default reason if nothing is selected
         reasonForVisit = JSON.stringify(["General check-up"]);
       }
       
+      console.log('Reason for visit:', reasonForVisit);
+      
       // Validate all required fields
       if (!selectedPet || !appointmentDate || !appointmentTime) {
+        console.log('Missing required fields:', {
+          selectedPet,
+          appointmentDate,
+          appointmentTime
+        });
         Alert.alert(
           "Missing Information",
           "Please fill in all required fields to book your appointment."
@@ -391,10 +397,13 @@ const Consultation = ({ navigation, route }) => {
       // Find the selected pet details
       const pet = pets.find(p => p.id.toString() === selectedPet);
       if (!pet) {
+        console.log('Selected pet not found:', selectedPet);
         Alert.alert("Error", "Selected pet not found. Please try again.");
         setLoading(false);
         return;
       }
+      
+      console.log('Selected pet details:', pet);
       
       // Prepare appointment data with explicit type conversions
       const appointmentData = {
@@ -403,39 +412,48 @@ const Consultation = ({ navigation, route }) => {
         pet_name: String(pet.name),
         pet_type: String(pet.type).toLowerCase(),
         pet_age: parseInt(pet.age, 10),
-        reason_for_visit: reasonForVisit, // Now properly formatted as JSON string
+        reason_for_visit: reasonForVisit,
         appointment_date: String(appointmentDate),
         appointment_time: String(appointmentTime)
       };
       
-      console.log('Sending appointment data to API:', appointmentData);
+      console.log('Appointment data:', appointmentData);
       
-      // Use the API endpoint
-      const endpoint = `${API_BASE_URL}/appointments/save.php`;
+      // Use the correct API endpoint for both web and app
+      const endpoint = `https://app.petfurme.shop/PetFurMe-Application/api/appointments/save.php`;
       console.log('Using endpoint:', endpoint);
       
       // Make a POST request
+      console.log('Sending POST request...');
+      console.log('Request body:', JSON.stringify(appointmentData, null, 2));
+      
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(appointmentData)
       });
       
+      console.log('Response status:', response.status);
+      console.log('Response headers:', JSON.stringify(Object.fromEntries([...response.headers]), null, 2));
       const responseText = await response.text();
-      console.log('Raw API response: ', responseText);
+      console.log('Raw API response:', responseText);
       
       // Try to parse the response as JSON
       let responseData;
       try {
         responseData = JSON.parse(responseText);
+        console.log('Parsed response:', responseData);
       } catch (parseError) {
-        console.error('Error parsing response:', parseError);
-        throw new Error(`Invalid response format: ${responseText}`);
+        console.error('JSON Parse Error:', parseError);
+        console.error('Invalid response text:', responseText);
+        throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 100)}...`);
       }
       
       if (!response.ok || !responseData.success) {
+        console.error('API error:', responseData);
         throw new Error(responseData.message || 'Failed to book appointment');
       }
       
@@ -457,30 +475,28 @@ const Consultation = ({ navigation, route }) => {
       
       const appointmentDateTime = `${moment(appointmentDate).format('MMMM D, YYYY')} at ${moment(appointmentTime, 'HH:mm').format('h:mm A')}`;
       
-      setShowWebAlert(true);
-      setAlertConfig({
-        title: "Appointment Booked!",
-        message: `Your appointment for ${pet.name} has been successfully booked for ${appointmentDateTime}.\n\nReason: ${readableReason}\n\nWe will notify you if there are any changes to your appointment.\n\nThank you for choosing PetFurMe!`,
-        buttons: [
+      // Show success alert
+      Alert.alert(
+        "Appointment Booked!",
+        `Your appointment for ${pet.name} has been successfully booked for ${appointmentDateTime}.\n\nReason: ${readableReason}\n\nWe will notify you if there are any changes to your appointment.\n\nThank you for choosing PetFurMe!`,
+        [
           {
             text: "View My Appointments",
-            onPress: () => {
-              setShowWebAlert(false);
-              navigation.navigate('Appointments');
-            }
+            onPress: () => navigation.navigate('Appointments')
           },
           {
             text: "OK",
-            onPress: () => {
-              setShowWebAlert(false);
-              navigation.goBack();
-            }
+            onPress: () => navigation.goBack()
           }
         ]
-      });
+      );
       
     } catch (error) {
       console.error('Booking error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
       Alert.alert(
         "Booking Failed",
         `Unable to book your appointment. ${error.message}`
@@ -515,21 +531,45 @@ const Consultation = ({ navigation, route }) => {
   const checkAvailability = async (date) => {
     try {
       const formattedDate = moment(date).format('YYYY-MM-DD');
-      const response = await fetch(
-        `http://${SERVER_IP}/PetFurMe-Application/api/appointments/check_availability.php?date=${formattedDate}`
-      );
-      const result = await response.json();
+      console.log('\n=== Check Date Availability Debug ===');
+      console.log('Checking availability for date:', formattedDate);
+      
+      // Update the URL to use the same format as other API calls
+      const url = `https://app.petfurme.shop/PetFurMe-Application/api/appointments/check_availability.php?date=${formattedDate}`;
+      console.log('Availability check URL:', url);
+      
+      const response = await fetch(url);
+      console.log('Availability response status:', response.status);
+      
+      const responseText = await response.text();
+      console.log('Raw availability response:', responseText);
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+        console.log('Parsed availability response:', result);
+      } catch (error) {
+        console.error('Error parsing availability response:', error);
+        return true; // Default to available if we can't parse the response
+      }
       
       if (result.success) {
+        console.log('Available slots:', result.available_slots);
         setAvailableSlots(result.available_slots);
         return result.is_available;
       } else {
         console.error('Failed to check availability:', result.message);
-        return false;
+        // Default to available if there's an error with the API
+        return true;
       }
     } catch (error) {
       console.error('Error checking availability:', error);
-      return false;
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+      // Default to available if there's an error
+      return true;
     }
   };
 
@@ -1071,203 +1111,168 @@ const Consultation = ({ navigation, route }) => {
         </View>
       </ScrollView>
 
-      {/* Date & Time Pickers - moved outside ScrollView for better rendering */}
-      {Platform.OS === 'ios' || Platform.OS === 'android' ? (
-        <>
-          <DateTimePickerModal
-            isVisible={showDatePicker}
-            mode="date"
-            onConfirm={handleDateConfirm}
-            onCancel={() => setShowDatePicker(false)}
-            minimumDate={new Date()}
-            display="default"
-            isDayDisabled={(data) => data.getDay() === 0} // Disable Sundays
-          />
-          
-          <DateTimePickerModal
-            isVisible={showTimePicker}
-            mode="time"
-            onConfirm={handleTimeConfirm}
-            onCancel={() => setShowTimePicker(false)}
-            display="default"
-          />
-        </>
-      ) : (
-        // Web-specific implementation
-        <>
-          {showDatePicker && (
-            <Modal 
-              animationType="fade" 
-              transparent={true} 
-              visible={showDatePicker}
-              onRequestClose={() => setShowDatePicker(false)}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>Select Date</Text>
-                    <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                      <MaterialCommunityIcons name="close" size={24} color="#8146C1" />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <Calendar
-                    current={appointmentDate || new Date()}
-                    minDate={new Date().toISOString().split('T')[0]}
-                    onDayPress={handleCalendarDayPress}
-                    markedDates={getMarkedDates()}
-                    firstDay={1} // Start week on Monday (0 = Sunday, 1 = Monday)
-                    disableAllTouchEventsForDisabledDays={true}
-                    theme={{
-                      calendarBackground: '#ffffff',
-                      textSectionTitleColor: '#8146C1',
-                      selectedDayBackgroundColor: '#8146C1',
-                      selectedDayTextColor: '#ffffff',
-                      todayTextColor: '#8146C1',
-                      dayTextColor: '#2d4150',
-                      textDisabledColor: '#d9d9d9',
-                      dotColor: '#8146C1',
-                      selectedDotColor: '#ffffff',
-                      arrowColor: '#8146C1',
-                      monthTextColor: '#8146C1',
-                      indicatorColor: '#8146C1',
-                      textDayFontWeight: '300',
-                      textMonthFontWeight: 'bold',
-                      textDayHeaderFontWeight: '500',
-                      textDayFontSize: 16,
-                      textMonthFontSize: 16,
-                      textDayHeaderFontSize: 14
-                    }}
-                  />
-                  
-                  <View style={styles.modalFooter}>
-                    <TouchableOpacity 
-                      style={styles.modalButton}
-                      onPress={() => setShowDatePicker(false)}
-                    >
-                      <Text style={styles.modalButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+      {/* Date & Time Pickers */}
+      <Modal 
+        animationType="fade" 
+        transparent={true} 
+        visible={showDatePicker}
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Date</Text>
+              <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                <MaterialCommunityIcons name="close" size={24} color="#8146C1" />
+              </TouchableOpacity>
+            </View>
+            
+            <Calendar
+              current={appointmentDate || new Date()}
+              minDate={new Date().toISOString().split('T')[0]}
+              onDayPress={handleCalendarDayPress}
+              markedDates={getMarkedDates()}
+              firstDay={1} // Start week on Monday
+              disableAllTouchEventsForDisabledDays={true}
+              theme={{
+                calendarBackground: '#ffffff',
+                textSectionTitleColor: '#8146C1',
+                selectedDayBackgroundColor: '#8146C1',
+                selectedDayTextColor: '#ffffff',
+                todayTextColor: '#8146C1',
+                dayTextColor: '#2d4150',
+                textDisabledColor: '#d9d9d9',
+                dotColor: '#8146C1',
+                selectedDotColor: '#ffffff',
+                arrowColor: '#8146C1',
+                monthTextColor: '#8146C1',
+                indicatorColor: '#8146C1'
+              }}
+            />
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal 
+        animationType="fade" 
+        transparent={true} 
+        visible={showTimePicker}
+        onRequestClose={() => setShowTimePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Time</Text>
+              <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                <MaterialCommunityIcons name="close" size={24} color="#8146C1" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.timePickerContainer}>
+              <View style={styles.timePickerHeader}>
+                <MaterialCommunityIcons name="clock-outline" size={20} color="#8146C1" />
+                <Text style={styles.timePickerHeaderText}>Morning</Text>
               </View>
-            </Modal>
-          )}
-          
-          {showTimePicker && (
-            <Modal 
-              animationType="fade" 
-              transparent={true} 
-              visible={showTimePicker}
-              onRequestClose={() => setShowTimePicker(false)}
-            >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>Select Time</Text>
-                    <TouchableOpacity onPress={() => setShowTimePicker(false)}>
-                      <MaterialCommunityIcons name="close" size={24} color="#8146C1" />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  <View style={styles.timePickerContainer}>
-                    <View style={styles.timePickerHeader}>
-                      <MaterialCommunityIcons name="clock-outline" size={20} color="#8146C1" />
-                      <Text style={styles.timePickerHeaderText}>Morning</Text>
-                    </View>
-                    
-                    <View style={styles.timeGrid}>
-                      {generateTimeSlots()
-                        .filter(slot => slot.period === 'morning')
-                        .map((slot) => (
-                          <TouchableOpacity
-                            key={slot.time}
-                            style={[
-                              styles.timeGridItem,
-                              appointmentTime === slot.time && styles.selectedTimeGridItem,
-                              slot.disabled && styles.disabledTimeGridItem
-                            ]}
-                            onPress={() => {
-                              if (!slot.disabled) {
-                                const today = new Date();
-                                const [hours, minutes] = slot.time.split(':');
-                                today.setHours(parseInt(hours, 10));
-                                today.setMinutes(parseInt(minutes, 10));
-                                handleTimeConfirm(today);
-                              }
-                            }}
-                            disabled={slot.disabled}
-                          >
-                            <Text style={[
-                              styles.timeGridItemText,
-                              appointmentTime === slot.time && styles.selectedTimeGridItemText,
-                              slot.disabled && styles.disabledTimeGridItemText
-                            ]}>
-                              {slot.displayTime}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                    </View>
-                    
-                    <View style={styles.lunchBreakContainer}>
-                      <View style={styles.lunchBreakIconContainer}>
-                        <MaterialCommunityIcons name="food-fork-drink" size={16} color="#FFF" />
-                      </View>
-                      <Text style={styles.lunchBreakText}>Lunch Break (12:00 PM - 1:00 PM)</Text>
-                    </View>
-                    
-                    <View style={styles.timePickerHeader}>
-                      <MaterialCommunityIcons name="clock-outline" size={20} color="#8146C1" />
-                      <Text style={styles.timePickerHeaderText}>Afternoon</Text>
-                    </View>
-                    
-                    <View style={styles.timeGrid}>
-                      {generateTimeSlots()
-                        .filter(slot => slot.period === 'afternoon')
-                        .map((slot) => (
-                          <TouchableOpacity
-                            key={slot.time}
-                            style={[
-                              styles.timeGridItem,
-                              appointmentTime === slot.time && styles.selectedTimeGridItem,
-                              slot.disabled && styles.disabledTimeGridItem
-                            ]}
-                            onPress={() => {
-                              if (!slot.disabled) {
-                                const today = new Date();
-                                const [hours, minutes] = slot.time.split(':');
-                                today.setHours(parseInt(hours, 10));
-                                today.setMinutes(parseInt(minutes, 10));
-                                handleTimeConfirm(today);
-                              }
-                            }}
-                            disabled={slot.disabled}
-                          >
-                            <Text style={[
-                              styles.timeGridItemText,
-                              appointmentTime === slot.time && styles.selectedTimeGridItemText,
-                              slot.disabled && styles.disabledTimeGridItemText
-                            ]}>
-                              {slot.displayTime}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                    </View>
-                  </View>
-                  
-                  <View style={styles.modalFooter}>
-                    <TouchableOpacity 
-                      style={styles.modalCancelButton}
-                      onPress={() => setShowTimePicker(false)}
+              
+              <View style={styles.timeGrid}>
+                {generateTimeSlots()
+                  .filter(slot => slot.period === 'morning')
+                  .map((slot) => (
+                    <TouchableOpacity
+                      key={slot.time}
+                      style={[
+                        styles.timeGridItem,
+                        appointmentTime === slot.time && styles.selectedTimeGridItem,
+                        slot.disabled && styles.disabledTimeGridItem
+                      ]}
+                      onPress={() => {
+                        if (!slot.disabled) {
+                          const today = new Date();
+                          const [hours, minutes] = slot.time.split(':');
+                          today.setHours(parseInt(hours, 10));
+                          today.setMinutes(parseInt(minutes, 10));
+                          handleTimeConfirm(today);
+                        }
+                      }}
+                      disabled={slot.disabled}
                     >
-                      <Text style={styles.modalCancelButtonText}>Cancel</Text>
+                      <Text style={[
+                        styles.timeGridItemText,
+                        appointmentTime === slot.time && styles.selectedTimeGridItemText,
+                        slot.disabled && styles.disabledTimeGridItemText
+                      ]}>
+                        {slot.displayTime}
+                      </Text>
                     </TouchableOpacity>
-                  </View>
-                </View>
+                  ))}
               </View>
-            </Modal>
-          )}
-        </>
-      )}
+              
+              <View style={styles.lunchBreakContainer}>
+                <View style={styles.lunchBreakIconContainer}>
+                  <MaterialCommunityIcons name="food-fork-drink" size={16} color="#FFF" />
+                </View>
+                <Text style={styles.lunchBreakText}>Lunch Break (12:00 PM - 1:00 PM)</Text>
+              </View>
+              
+              <View style={styles.timePickerHeader}>
+                <MaterialCommunityIcons name="clock-outline" size={20} color="#8146C1" />
+                <Text style={styles.timePickerHeaderText}>Afternoon</Text>
+              </View>
+              
+              <View style={styles.timeGrid}>
+                {generateTimeSlots()
+                  .filter(slot => slot.period === 'afternoon')
+                  .map((slot) => (
+                    <TouchableOpacity
+                      key={slot.time}
+                      style={[
+                        styles.timeGridItem,
+                        appointmentTime === slot.time && styles.selectedTimeGridItem,
+                        slot.disabled && styles.disabledTimeGridItem
+                      ]}
+                      onPress={() => {
+                        if (!slot.disabled) {
+                          const today = new Date();
+                          const [hours, minutes] = slot.time.split(':');
+                          today.setHours(parseInt(hours, 10));
+                          today.setMinutes(parseInt(minutes, 10));
+                          handleTimeConfirm(today);
+                        }
+                      }}
+                      disabled={slot.disabled}
+                    >
+                      <Text style={[
+                        styles.timeGridItemText,
+                        appointmentTime === slot.time && styles.selectedTimeGridItemText,
+                        slot.disabled && styles.disabledTimeGridItemText
+                      ]}>
+                        {slot.displayTime}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+              </View>
+            </View>
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.modalCancelButton}
+                onPress={() => setShowTimePicker(false)}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Book Button */}
       <View style={styles.buttonContainer}>

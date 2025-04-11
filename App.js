@@ -111,6 +111,13 @@ const DrawerNavigator = () => {
 					drawerLabel: 'Appointments',
 				}}
 			/>
+			<Drawer.Screen 
+				name="ProfileVerification" 
+				component={ProfileVerification}
+				options={{
+					drawerLabel: 'Profile Settings',
+				}}
+			/>
 		</Drawer.Navigator>
 	);
 };
@@ -225,8 +232,14 @@ const App = () => {
 								<Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
 								<Stack.Screen name="LandingPage" component={LandingPage} />
 
-								{/* Add ProfileVerification screen here */}
-								<Stack.Screen name="ProfileVerification" component={ProfileVerification} />
+								{/* Profile Verification can be accessed from both Stack and Drawer */}
+								<Stack.Screen 
+									name="ProfileVerification" 
+									component={ProfileVerification}
+									options={{
+										headerShown: false
+									}}
+								/>
 
 								{/* Add ViewMorePro screen here */}
 								<Stack.Screen name="ViewMorePro" component={ViewMorePro} />

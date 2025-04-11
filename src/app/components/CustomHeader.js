@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Image, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL, getApiUrl } from '../config/constants';
 import axios from 'axios';
@@ -14,6 +14,13 @@ const CustomHeader = ({
   userPhoto,
   user_id
 }) => {
+  console.log("CustomHeader rendering with props:", { 
+    title, 
+    showProfileButton, 
+    userPhoto, 
+    user_id 
+  });
+
   const [userData, setUserData] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
 
@@ -102,6 +109,51 @@ const CustomHeader = ({
     return () => clearInterval(refreshInterval);
   }, [user_id]);
 
+  const handleProfilePress = () => {
+    console.log("Profile button pressed with user_id:", user_id);
+    console.log("Navigation object available:", !!navigation);
+    console.log("Navigation object details:", JSON.stringify({
+      navigate: !!navigation?.navigate,
+      reset: !!navigation?.reset,
+      navigationState: navigation?.getState?.(),
+      platform: Platform.OS
+    }, null, 2));
+    
+    try {
+      if (navigation?.navigate) {
+        console.log("Attempting navigation to ProfileVerification");
+        
+        // Use direct navigation to ProfileVerification screen instead of nested navigation
+        // This works better on Android and is compatible with both platforms
+        navigation.navigate('ProfileVerification', { 
+          user_id,
+          initial: { user_id }
+        });
+        
+        console.log("Navigation completed");
+      } else {
+        console.warn("Navigation object does not have navigate method");
+        
+        // Fallback for extreme cases
+        Alert.alert(
+          'Navigation Error',
+          'Unable to access profile settings at this time. Please try again later.'
+        );
+      }
+    } catch (error) {
+      console.error("Error navigating to ProfileVerification:", error);
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack
+      });
+      
+      Alert.alert(
+        'Navigation Error',
+        'Unable to access profile settings at this time. Please try again later.'
+      );
+    }
+  };
+
   return (
     <View style={styles.headerContainer}>
       <View style={styles.header}>
@@ -141,12 +193,7 @@ const CustomHeader = ({
           {showProfileButton && (
             <TouchableOpacity 
               style={styles.iconButton}
-              onPress={() => {
-                navigation.navigate('ProfileVerification', { 
-                  user_id,
-                  initial: { user_id }
-                });
-              }}
+              onPress={handleProfilePress}
             >
               {profileImage ? (
                 <Image

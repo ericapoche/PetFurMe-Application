@@ -235,7 +235,7 @@ const NotificationScreen = ({ navigation, route }) => {
   const fetchNotifications = async (currentUserId) => {
     try {
       const response = await axios.get(
-        `http://${SERVER_IP}/PetFurMe-Application/api/notifications/get_notifications.php?user_id=${currentUserId}`,
+        `https://app.petfurme.shop/PetFurMe-Application/api/notifications/get_notifications.php?user_id=${currentUserId}`,
         { timeout: 5000 }
       );
 
@@ -267,7 +267,7 @@ const NotificationScreen = ({ navigation, route }) => {
   const checkAppointmentStatusChanges = async (currentUserId) => {
     try {
       const response = await axios.get(
-        `http://${SERVER_IP}/PetFurMe-Application/api/appointments/check_status_changes.php?user_id=${currentUserId}`,
+        `https://app.petfurme.shop/PetFurMe-Application/api/appointments/check_status_changes.php?user_id=${currentUserId}`,
         { timeout: 5000 }
       );
 
@@ -289,7 +289,7 @@ const NotificationScreen = ({ navigation, route }) => {
       }
 
       const response = await axios.post(
-        `http://${SERVER_IP}/PetFurMe-Application/api/notifications/mark_as_read.php`,
+        `https://app.petfurme.shop/PetFurMe-Application/api/notifications/mark_as_read.php`,
         {
           notification_id: id,
           user_id: user_id
@@ -331,7 +331,7 @@ const NotificationScreen = ({ navigation, route }) => {
   const deleteNotification = async (id) => {
     try {
       const response = await axios.post(
-        `http://${SERVER_IP}/PetFurMe-Application/api/notifications/delete_notification.php`,
+        `https://app.petfurme.shop/PetFurMe-Application/api/notifications/delete_notification.php`,
         {
           notification_id: id,
           user_id: user_id
@@ -383,7 +383,7 @@ const NotificationScreen = ({ navigation, route }) => {
       if (!item.read) {
         try {
           const response = await axios.post(
-            `http://${SERVER_IP}/PetFurMe-Application/api/notifications/mark_as_read.php`,
+            `https://app.petfurme.shop/PetFurMe-Application/api/notifications/mark_as_read.php`,
             {
               notification_id: item.id,
               user_id: user_id

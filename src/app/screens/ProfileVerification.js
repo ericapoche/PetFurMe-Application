@@ -29,10 +29,13 @@ const getApiUrl = (endpoint, params = {}) => {
 const ProfileVerification = ({ navigation, route }) => {
     const user_id = route.params?.user_id || 
                    route.params?.initial?.user_id || 
-                   new URLSearchParams(window.location.search).get('user_id');
+                   (Platform.OS === 'web' ? new URLSearchParams(window.location.search).get('user_id') : null);
+    
+    console.log('ProfileVerification received params:', route.params);
+    console.log('Extracted user_id:', user_id);
     
     const isTestMode = route.params?.testing || 
-                      new URLSearchParams(window.location.search).get('testing') === 'true';
+                      (Platform.OS === 'web' ? new URLSearchParams(window.location.search).get('testing') === 'true' : false);
 
     const [isLoading, setIsLoading] = useState(false);
     const [name, setName] = useState('');

@@ -1,0 +1,22 @@
+# Exclude unnecessary files and directories
+node_modules/
+.git/
+.expo/
+logs/
+scripts/
+htdocs/
+public/
+PetFurMe-Application/
+/android
+/ios
+
+# Exclude unnecessary file types
+*.log
+*.md
+*.bat
+*.ps1
+
+# Keep necessary build files
+!metro.config.js
+!babel.config.js
+!app.config.js 
