@@ -276,9 +276,9 @@ const AddPetProfile = ({ route }) => {
 			navigation.navigate('HomePage', {
 				user_id: user_id,
 				refresh: true,
-				showMessage: true,
-				message: `Pet profile added successfully!`,
-				messageType: 'success'
+				petSaved: true,
+				petName: petName,
+				isUpdate: isEditing
 			});
 
 		} catch (error) {

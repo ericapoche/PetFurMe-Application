@@ -126,7 +126,7 @@ const UpdatePetProfile = ({ navigation, route }) => {
 
   const handleSkipAge = () => {
     if (petAge === 'Not Specified') {
-        setPetAge(previousAge);
+        setPetAge(previousAge || '');
     } else {
         setPreviousAge(petAge);
         setPetAge('Not Specified');
@@ -135,7 +135,7 @@ const UpdatePetProfile = ({ navigation, route }) => {
 
   const handleSkipWeight = () => {
     if (petWeight === 'Not Specified') {
-        setPetWeight(previousWeight);
+        setPetWeight(previousWeight || '');
     } else {
         setPreviousWeight(petWeight);
         setPetWeight('Not Specified');
@@ -144,7 +144,7 @@ const UpdatePetProfile = ({ navigation, route }) => {
 
   const handleSkipBreed = () => {
     if (petBreed === 'Not Specified') {
-        setPetBreed(previousBreed);
+        setPetBreed(previousBreed || '');
     } else {
         setPreviousBreed(petBreed);
         setPetBreed('Not Specified');
@@ -180,45 +180,31 @@ const UpdatePetProfile = ({ navigation, route }) => {
       
       // Convert petData to JSON string
       const petDataJson = JSON.stringify(petData);
-      console.log('Pet data JSON:', petDataJson.substring(0, 100) + '...');
+      console.log('Pet data JSON:', petDataJson);
       
-      // Create a FormData object
+      // Create URL (ensure it's using https for consistency)
+      const url = `https://app.petfurme.shop/PetFurMe-Application/api/pets/update_pet.php`;
+      console.log('Sending request to:', url);
+      
+      // Create FormData for both web and mobile
       const formData = new FormData();
       formData.append('data', petDataJson);
       
-      // Handle photo if it exists
+      // Handle photo if it exists 
       if (photo && photo.base64) {
         formData.append('photo', photo.base64);
         formData.append('is_base64', 'true');
       }
       
-      // Debug: Log all form data entries
+      // Debug: Log form data
       console.log('FormData entries:');
       for (let pair of formData.entries()) {
         console.log(pair[0] + ': ' + (pair[0] === 'photo' ? '[binary data]' : pair[1].substring(0, 50) + '...'));
       }
       
-      // Create URL
-      const url = `http://${SERVER_IP}/PetFurMe-Application/api/pets/update_pet.php`;
-      console.log('Sending request to:', url);
-      
-      // Try a different approach for web - use fetch with URLSearchParams
-      const params = new URLSearchParams();
-      params.append('data', petDataJson);
-      
-      if (photo && photo.base64) {
-        params.append('photo', photo.base64);
-        params.append('is_base64', 'true');
-      }
-      
-      console.log('Using URLSearchParams for web platform');
-      
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: params
+        body: formData,
       });
       
       const responseText = await response.text();
@@ -259,9 +245,9 @@ const UpdatePetProfile = ({ navigation, route }) => {
               params: {
                 user_id: user_id,
                 refresh: true,
-                showMessage: true,
-                message: 'Pet profile updated successfully!',
-                messageType: 'success'
+                petSaved: true,
+                petName: petName,
+                isUpdate: true
               }
             }
           }
@@ -371,12 +357,10 @@ const UpdatePetProfile = ({ navigation, route }) => {
                       petAge !== 'Not Specified' && petAge !== '' && styles.optionalInputWithValue,
                       petAge === 'Not Specified' && styles.skippedInput
                     ]}
-                    placeholder={isAgeFocused || petAge !== 'Not Specified' ? '' : 'None'}
-                    value={petAge === 'Not Specified' || !petAge ? 'None' : petAge}
-                    onFocus={() => setIsAgeFocused(true)}
-                    onBlur={() => setIsAgeFocused(false)}
+                    placeholder="Enter age"
+                    value={petAge === 'Not Specified' ? '' : petAge}
                     onChangeText={(text) => {
-                      if (text.trim() === '' || text === 'None') {
+                      if (text.trim() === '') {
                         setPetAge('Not Specified');
                       } else {
                         setPetAge(text);
@@ -410,12 +394,10 @@ const UpdatePetProfile = ({ navigation, route }) => {
                       petWeight !== 'Not Specified' && petWeight !== '' && styles.optionalInputWithValue,
                       petWeight === 'Not Specified' && styles.skippedInput
                     ]}
-                    placeholder={isWeightFocused || petWeight !== 'Not Specified' ? '' : 'None'}
-                    value={petWeight === 'Not Specified' || !petWeight ? 'None' : petWeight}
-                    onFocus={() => setIsWeightFocused(true)}
-                    onBlur={() => setIsWeightFocused(false)}
+                    placeholder="Enter weight"
+                    value={petWeight === 'Not Specified' ? '' : petWeight}
                     onChangeText={(text) => {
-                      if (text.trim() === '' || text === 'None') {
+                      if (text.trim() === '') {
                         setPetWeight('Not Specified');
                       } else {
                         setPetWeight(text);
@@ -449,12 +431,10 @@ const UpdatePetProfile = ({ navigation, route }) => {
                       petBreed !== 'Not Specified' && petBreed !== '' && styles.optionalInputWithValue,
                       petBreed === 'Not Specified' && styles.skippedInput
                     ]}
-                    placeholder={isBreedFocused || petBreed !== 'Not Specified' ? '' : 'None'}
-                    value={petBreed === 'Not Specified' || !petBreed ? 'None' : petBreed}
-                    onFocus={() => setIsBreedFocused(true)}
-                    onBlur={() => setIsBreedFocused(false)}
+                    placeholder="Enter breed"
+                    value={petBreed === 'Not Specified' ? '' : petBreed}
                     onChangeText={(text) => {
-                      if (text.trim() === '' || text === 'None') {
+                      if (text.trim() === '') {
                         setPetBreed('Not Specified');
                       } else {
                         setPetBreed(text);

@@ -44,7 +44,12 @@ const AddPetSize = ({ navigation, route }) => {
           {
             text: "OK",
             onPress: () => navigation.navigate("DrawerNavigator", { 
-              screen: 'HomePage'
+              screen: 'HomePage',
+              params: {
+                petSaved: true,
+                petName: route.params?.petName || 'Your pet',
+                isUpdate: true
+              }
             })
           }
         ]

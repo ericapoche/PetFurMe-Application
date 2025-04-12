@@ -77,7 +77,7 @@ const RegistrationScreen = ({ navigation }) => {
 
 	const tryAlternateEndpoints = async (email) => {
 		const endpoints = [
-			`${API_URL}/send-otp`,
+			`${API_URL}/send-otp.php`,
 		];
 		
 		const axiosInstance = axios.create({
@@ -132,7 +132,7 @@ const RegistrationScreen = ({ navigation }) => {
 				return;
 			}
 
-			console.log('Sending request to:', `${API_URL}/verify-email`);
+			console.log('Sending request to:', `${API_URL}/verify-email.php`);
 			
 			// Create axios instance with timeout and better error handling
 			const axiosInstance = axios.create({
@@ -144,7 +144,7 @@ const RegistrationScreen = ({ navigation }) => {
 			});
 			
 			// Check if email exists
-			const verifyResponse = await axiosInstance.post(`${API_URL}/verify-email`, {
+			const verifyResponse = await axiosInstance.post(`${API_URL}/verify-email.php`, {
 				email: email.trim()
 			});
 
@@ -153,10 +153,10 @@ const RegistrationScreen = ({ navigation }) => {
 				return;
 			}
 
-			console.log('Sending OTP request to:', `${API_URL}/send-otp`);
+			console.log('Sending OTP request to:', `${API_URL}/send-otp.php`);
 			
 			// Send OTP
-			const response = await axiosInstance.post(`${API_URL}/send-otp`, {
+			const response = await axiosInstance.post(`${API_URL}/send-otp.php`, {
 				email: email.trim()
 			});
 
@@ -165,8 +165,8 @@ const RegistrationScreen = ({ navigation }) => {
 			if (response.data.success) {
 				setStep(2);
 				Alert.alert(
-					"Success",
-					"Verification code has been sent to your email",
+					"Verification Code Sent",
+					"A verification code has been sent to your email address. Please check your inbox and spam/junk folder if you don't see it within a few minutes.",
 					[{ text: "OK" }]
 				);
 			} else {
@@ -206,7 +206,7 @@ const RegistrationScreen = ({ navigation }) => {
 				}
 			});
 
-			const response = await axiosInstance.post(`${API_URL}/verify-otp`, {
+			const response = await axiosInstance.post(`${API_URL}/verify-otp.php`, {
 				email: email.trim(),
 				otp: otp.trim()
 			});
@@ -215,7 +215,7 @@ const RegistrationScreen = ({ navigation }) => {
 
 			if (response.data.success) {
 				// Register the user
-				const registerResponse = await axiosInstance.post(`${API_URL}/register`, {
+				const registerResponse = await axiosInstance.post(`${API_URL}/register.php`, {
 					email: email.trim(),
 					username: username.trim(),
 					password: password
@@ -313,6 +313,9 @@ const RegistrationScreen = ({ navigation }) => {
 			</Text>
 			<Text style={styles.emailDisplay}>
 				{email}
+			</Text>
+			<Text style={styles.otpText}>
+				If you don't see it in your inbox, please check your spam/junk folder.
 			</Text>
 			<View style={styles.inputWrapper}>
 				<Ionicons name="key-outline" size={20} color="#8146C1" style={styles.icon} />

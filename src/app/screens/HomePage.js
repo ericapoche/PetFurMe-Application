@@ -13,6 +13,8 @@ import {
 	Platform,
 	Button,
 	RefreshControl,
+	Animated,
+	useWindowDimensions,
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { BASE_URL, SERVER_IP, SERVER_PORT } from '../config/constants';
@@ -52,6 +54,11 @@ const HomePage = ({ navigation, route }) => {
 	const [isRecordModalVisible, setIsRecordModalVisible] = useState(false);
 	const [selectedRecord, setSelectedRecord] = useState(null);
 	const { updateDetails } = route.params || {};
+	const [showSuccessCard, setShowSuccessCard] = useState(false);
+	const [successMessage, setSuccessMessage] = useState('');
+	const [petNameSaved, setPetNameSaved] = useState('');
+	const fadeAnim = useState(new Animated.Value(0))[0];
+	const { width, height } = useWindowDimensions();
 
 	// Add refresh interval reference
 	const refreshIntervalRef = React.useRef(null);
@@ -176,6 +183,46 @@ const HomePage = ({ navigation, route }) => {
 			Alert.alert('Profile Update', updateDetails);
 		}
 	}, [updateDetails]);
+
+	useEffect(() => {
+		if (route.params?.petSaved) {
+			const petName = route.params.petName || 'Your pet';
+			const isUpdate = route.params.isUpdate || false;
+			
+			// Set the success message data
+			setPetNameSaved(petName);
+			setSuccessMessage(isUpdate ? 'updated successfully!' : 'saved successfully!');
+			setShowSuccessCard(true);
+			
+			// Animate the success card
+			Animated.sequence([
+				Animated.spring(fadeAnim, {
+					toValue: 1,
+					friction: 7,
+					tension: 40,
+					useNativeDriver: true,
+				}),
+				Animated.delay(2500),
+				Animated.timing(fadeAnim, {
+					toValue: 0,
+					duration: 500,
+					useNativeDriver: true,
+				})
+			]).start(() => {
+				setShowSuccessCard(false);
+			});
+			
+			// Clear the route params
+			navigation.setParams({
+				petSaved: undefined,
+				petName: undefined,
+				isUpdate: undefined
+			});
+			
+			// Refresh the pets list
+			fetchUserPets();
+		}
+	}, [route.params?.petSaved]);
 
 	const fetchUserPets = async () => {
 		try {
@@ -644,6 +691,32 @@ const HomePage = ({ navigation, route }) => {
 
 	return (
 		<View style={styles.container}>
+			{/* Success message card */}
+			{showSuccessCard && (
+				<View style={styles.successCardContainer}>
+					<Animated.View style={[
+						styles.successCard, 
+						{ 
+							opacity: fadeAnim,
+							transform: [
+								{ scale: fadeAnim.interpolate({
+									inputRange: [0, 1],
+									outputRange: [0.8, 1]
+								})}
+							]
+						}
+					]}>
+						<View style={styles.successIconContainer}>
+							<Ionicons name="checkmark-circle" size={28} color="#FFFFFF" />
+						</View>
+						<View style={styles.successMessageContainer}>
+							<Text style={styles.successPetName}>{petNameSaved}</Text>
+							<Text style={styles.successText}>{successMessage}</Text>
+						</View>
+					</Animated.View>
+				</View>
+			)}
+			
 			{toastConfig && (
 				<CustomToast
 					message={toastConfig.message}
@@ -2120,6 +2193,55 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		marginTop: 4,
 		paddingHorizontal: 20,
+	},
+	successCardContainer: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		justifyContent: 'center',
+		alignItems: 'center',
+		zIndex: 9999,
+		pointerEvents: 'none',
+	},
+	successCard: {
+		backgroundColor: '#8146C1',
+		borderRadius: 12,
+		padding: 16,
+		flexDirection: 'row',
+		alignItems: 'center',
+		width: '85%', 
+		maxWidth: 320,
+		shadowColor: '#000',
+		shadowOffset: {
+			width: 0,
+			height: 3,
+		},
+		shadowOpacity: 0.27,
+		shadowRadius: 4.65,
+		elevation: 6,
+	},
+	successIconContainer: {
+		width: 42,
+		height: 42,
+		borderRadius: 21,
+		backgroundColor: 'rgba(255, 255, 255, 0.3)',
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginRight: 12,
+	},
+	successMessageContainer: {
+		flex: 1,
+	},
+	successPetName: {
+		fontSize: 16,
+		fontWeight: 'bold',
+		color: '#FFFFFF',
+	},
+	successText: {
+		fontSize: 14,
+		color: 'rgba(255, 255, 255, 0.9)',
 	},
 });
 

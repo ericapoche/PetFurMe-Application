@@ -36,7 +36,6 @@ const WebAlert = ({ visible, title, message, buttons, onDismiss }) => {
   // Reconstruct the message with styled notification
   const beforeNotification = messageLines.slice(0, notificationIndex).join('\n');
   const notification = messageLines[notificationIndex];
-  const afterNotification = messageLines.slice(notificationIndex + 1).join('\n');
 
   return (
     <Modal
@@ -60,10 +59,6 @@ const WebAlert = ({ visible, title, message, buttons, onDismiss }) => {
                 {notification}
               </Text>
             </View>
-
-            {afterNotification && (
-              <Text style={styles.webAlertMessage}>{afterNotification}</Text>
-            )}
           </View>
 
           <View style={styles.webAlertButtonContainer}>
@@ -157,32 +152,35 @@ const Consultation = ({ navigation, route }) => {
     const checkSession = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem('user_id');
-        if (!storedUserId && !user_id) {
-          console.log("No user_id found in Consultation, redirecting to login");
-          Alert.alert(
-            'Session Expired',
-            'Please login again to continue.',
-            [
-              {
-                text: 'OK',
-                onPress: () => navigation.replace('LoginScreen')
-              }
-            ]
-          );
-        } else {
-          // If we have user_id from route but not in storage, store it
-          if (!storedUserId && user_id) {
-            await AsyncStorage.setItem('user_id', user_id.toString());
-          }
-          fetchUserPets();
-          
-          // Handle rescheduling scenario
-          if (isRescheduling && originalAppointment) {
-            populateReschedulingData();
-          }
+        // Use either route param or stored user_id
+        const currentUserId = user_id || storedUserId;
+
+        if (!currentUserId) {
+          console.log("No user_id found in Consultation");
+          // Only redirect if we really can't find a user ID anywhere
+          navigation.replace('LoginScreen');
+          return;
+        }
+
+        // If we have user_id from route but not in storage, store it
+        if (!storedUserId && user_id) {
+          await AsyncStorage.setItem('user_id', user_id.toString());
+        }
+
+        // If we have stored user_id but no route param, update navigation state
+        if (storedUserId && !user_id) {
+          navigation.setParams({ user_id: storedUserId });
+        }
+
+        fetchUserPets();
+        
+        // Handle rescheduling scenario
+        if (isRescheduling && originalAppointment) {
+          populateReschedulingData();
         }
       } catch (error) {
         console.error('Session check error:', error);
+        // Don't automatically logout on error, just log it
       }
     };
 
@@ -411,7 +409,7 @@ const Consultation = ({ navigation, route }) => {
         pet_id: parseInt(pet.id, 10),
         pet_name: String(pet.name),
         pet_type: String(pet.type).toLowerCase(),
-        pet_age: parseInt(pet.age, 10),
+        pet_age: pet.age !== null && pet.age !== undefined ? parseInt(pet.age, 10) : 0,
         reason_for_visit: reasonForVisit,
         appointment_date: String(appointmentDate),
         appointment_time: String(appointmentTime)
@@ -458,13 +456,17 @@ const Consultation = ({ navigation, route }) => {
       }
       
       // Log the activity
-      await logActivity(ACTIVITY_TYPES.BOOK_APPOINTMENT, {
-        pet_id: pet.id,
-        pet_name: pet.name,
-        appointment_date: appointmentDate,
-        appointment_time: appointmentTime,
-        reason: reasonForVisit
-      });
+      await logActivity(
+        ACTIVITY_TYPES.APPOINTMENT_BOOKED,
+        user_id,
+        {
+          pet_id: pet.id,
+          pet_name: pet.name,
+          date: appointmentDate,
+          time: appointmentTime,
+          reasons: reasonForVisit
+        }
+      );
       
       // Show success message - use a readable format for display
       const readableReason = Array.isArray(reasons) && reasons.length > 0 
@@ -475,21 +477,32 @@ const Consultation = ({ navigation, route }) => {
       
       const appointmentDateTime = `${moment(appointmentDate).format('MMMM D, YYYY')} at ${moment(appointmentTime, 'HH:mm').format('h:mm A')}`;
       
-      // Show success alert
-      Alert.alert(
-        "Appointment Booked!",
-        `Your appointment for ${pet.name} has been successfully booked for ${appointmentDateTime}.\n\nReason: ${readableReason}\n\nWe will notify you if there are any changes to your appointment.\n\nThank you for choosing PetFurMe!`,
-        [
+      // Show success alert using WebAlert with preserved user_id
+      setAlertConfig({
+        title: "Appointment Booked!",
+        message: `Your appointment for ${pet.name} has been successfully booked for ${appointmentDateTime}.\n\nReason: ${readableReason}\n\nWe will notify you if there are any changes to your appointment.`,
+        buttons: [
           {
             text: "View My Appointments",
-            onPress: () => navigation.navigate('Appointments')
+            onPress: async () => {
+              setShowWebAlert(false);
+              // Preserve user_id when navigating
+              navigation.navigate('Appointment', { 
+                user_id: user_id || await AsyncStorage.getItem('user_id'),
+                timestamp: Date.now()
+              });
+            }
           },
           {
             text: "OK",
-            onPress: () => navigation.goBack()
+            onPress: () => {
+              setShowWebAlert(false);
+              navigation.goBack();
+            }
           }
         ]
-      );
+      });
+      setShowWebAlert(true);
       
     } catch (error) {
       console.error('Booking error:', error);
@@ -1341,13 +1354,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F4EBFD', // Very light violet background
+    paddingTop: Platform.OS === 'android' ? 25 : 0, // Add padding for Android status bar
   },
   scrollView: {
     flex: 1,
   },
   formContainer: {
     padding: 16,
-    paddingBottom: 100,
+    paddingBottom: Platform.OS === 'android' ? 120 : 100, // Extra padding for Android
   },
   cardContainer: {
     backgroundColor: '#FFFFFF',
@@ -1361,6 +1375,7 @@ const styles = StyleSheet.create({
     borderColor: '#DDC6F7', // Lighter violet border
     overflow: 'hidden',
     marginBottom: 16,
+    marginTop: Platform.OS === 'android' ? 8 : 0, // Add margin top for Android
   },
   sectionContainer: {
     padding: 16,
@@ -1384,13 +1399,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-    paddingVertical: 8,
+    paddingVertical: Platform.OS === 'android' ? 12 : 8, // Increased padding for Android
+    minHeight: Platform.OS === 'android' ? 56 : 48, // Minimum height to ensure proper icon display
   },
   sectionHeaderText: {
-    fontSize: 16,
+    fontSize: Platform.OS === 'android' ? 18 : 16,
     fontWeight: '600',
-    color: '#8146C1', // Header matching violet
-    marginLeft: 12,
+    color: '#8146C1',
+    marginLeft: Platform.OS === 'android' ? 16 : 12,
+    flex: 1, // Allow text to take remaining space
   },
   pickerWrapper: {
     marginBottom: 20,
@@ -1649,48 +1666,48 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   webAlertContainer: {
-    backgroundColor: '#FFF',
-    borderRadius: 12,
-    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     width: '100%',
     maxWidth: 400,
-    maxHeight: '80%',
+    padding: 24,
+    elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 4,
   },
   webAlertHeader: {
+    flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   webAlertTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '600',
-    color: '#8146C1',
-    marginTop: 8,
+    color: '#000',
+    marginTop: 12,
     textAlign: 'center',
   },
   webAlertMessageContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   webAlertMessage: {
     fontSize: 16,
     color: '#333',
+    lineHeight: 24,
+    marginBottom: 16,
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 12,
   },
   webAlertNotification: {
     backgroundColor: '#F4EBFD',
+    padding: 16,
     borderRadius: 8,
-    padding: 12,
-    marginVertical: 12,
+    marginTop: 8,
   },
   webAlertNotificationText: {
     fontSize: 14,
-    color: '#6a4190',
+    color: '#8146C1',
     textAlign: 'center',
   },
   webAlertButtonContainer: {
@@ -1701,26 +1718,26 @@ const styles = StyleSheet.create({
   webAlertButton: {
     flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     borderRadius: 8,
+    marginHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 6,
+    minHeight: 48,
   },
   webAlertPrimaryButton: {
     backgroundColor: '#8146C1',
   },
   webAlertSecondaryButton: {
     backgroundColor: '#F4EBFD',
-    borderWidth: 1,
-    borderColor: '#DDC6F7',
   },
   webAlertButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
+    textAlign: 'center',
   },
   webAlertPrimaryButtonText: {
-    color: '#FFF',
+    color: '#FFFFFF',
   },
   webAlertSecondaryButtonText: {
     color: '#8146C1',

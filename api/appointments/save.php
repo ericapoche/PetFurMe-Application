@@ -68,7 +68,18 @@ try {
 
     foreach ($required_fields as $field => $type) {
         if (!isset($data->$field)) {
+            // Special case for pet_age - set a default value of 0 if missing
+            if ($field === 'pet_age') {
+                $data->pet_age = 0;
+                continue;
+            }
             $missing_fields[] = $field;
+            continue;
+        }
+
+        // For pet_age, handle null values by setting to 0
+        if ($field === 'pet_age' && $data->$field === null) {
+            $data->pet_age = 0;
             continue;
         }
 
@@ -119,7 +130,7 @@ try {
     // Convert fields to appropriate types
     $data->user_id = (int)$data->user_id;
     $data->pet_id = (int)$data->pet_id;
-    $data->pet_age = (int)$data->pet_age;
+    $data->pet_age = ($data->pet_age === null) ? 0 : (int)$data->pet_age;
 
     // Validate date and time format
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $data->appointment_date)) {
