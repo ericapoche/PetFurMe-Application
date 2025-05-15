@@ -205,6 +205,8 @@ const HelpScreen = ({ navigation, route }) => {
           showsHorizontalScrollIndicator={false}
           data={categories}
           keyExtractor={(item) => item}
+          directionalLockEnabled={true}
+          disableScrollViewPanResponder={true}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[

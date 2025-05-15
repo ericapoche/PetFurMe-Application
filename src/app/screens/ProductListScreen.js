@@ -30,9 +30,9 @@ const ProductListScreen = ({ navigation, route }) => {
   const categories = [
     { id: 'all', name: 'All' },
     { id: '1', name: 'Food' },
-    { id: '2', name: 'Medicine' },
-    { id: '3', name: 'Accessories' },
-    { id: '4', name: 'Grooming' },
+    { id: '4', name: 'Medicine' },
+    { id: '5', name: 'Accessories' },
+    { id: '3', name: 'Grooming' },
   ];
 
   useEffect(() => {
@@ -228,6 +228,8 @@ const ProductListScreen = ({ navigation, route }) => {
               data={categories}
               keyExtractor={item => item.id}
               contentContainerStyle={styles.categoriesList}
+              directionalLockEnabled={true}
+              disableScrollViewPanResponder={true}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[

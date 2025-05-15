@@ -471,7 +471,7 @@ const HomePage = ({ navigation, route }) => {
 		}
 
 		return (
-			<ScrollView horizontal showsHorizontalScrollIndicator={false}>
+			<ScrollView horizontal showsHorizontalScrollIndicator={false} directionalLockEnabled={true} disableScrollViewPanResponder={true}>
 				{petRecords.map((record, index) => (
 					<TouchableOpacity 
 						key={index}
@@ -735,6 +735,7 @@ const HomePage = ({ navigation, route }) => {
 
 			<ScrollView 
 				contentContainerStyle={styles.scrollContent}
+				directionalLockEnabled={true}
 				refreshControl={
 					<RefreshControl
 						{...refreshControlProps}
@@ -843,7 +844,7 @@ const HomePage = ({ navigation, route }) => {
 						<Text style={styles.widgetTitle}>Upcoming Appointments</Text>
 					</View>
 					{upcomingAppointments.length > 0 ? (
-						<ScrollView horizontal showsHorizontalScrollIndicator={false}>
+						<ScrollView horizontal showsHorizontalScrollIndicator={false} directionalLockEnabled={true} disableScrollViewPanResponder={true}>
 							{upcomingAppointments.map((appointment, index) => (
 								<TouchableOpacity 
 									key={index}

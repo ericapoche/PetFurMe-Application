@@ -55,10 +55,11 @@ const DrawerNavigator = () => {
 					backgroundColor: '#fff',
 					width: 280,
 				},
-				swipeEnabled: true,
+				swipeEnabled: false,
 				gestureEnabled: true,
 				drawerType: 'front',
 				overlayColor: 'rgba(0,0,0,0.5)',
+				swipeEdgeWidth: 30,
 			}}
 			initialRouteName="HomePage"
 		>
@@ -210,7 +211,7 @@ const App = () => {
 								initialRouteName="HomeScreen"
 								screenOptions={{
 									headerShown: false,
-									gestureEnabled: true,
+									gestureEnabled: false,
 									cardStyleInterpolator: ({ current, layouts }) => ({
 										cardStyle: {
 											transform: [

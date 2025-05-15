@@ -18,9 +18,9 @@ console.log('SERVER_IP:', SERVER_IP);
 
 const categoryColors = {
     '1': { bg: '#FFE8E8', tag: '#FF4444', text: '#FFFFFF' }, // Food
-    '2': { bg: '#E8FFF1', tag: '#44FF88', text: '#FFFFFF' }, // Medicine
-    '3': { bg: '#E8F1FF', tag: '#4488FF', text: '#FFFFFF' }, // Accessories
-    '4': { bg: '#FFE8FF', tag: '#FF44FF', text: '#FFFFFF' }, // Grooming
+    '4': { bg: '#E8FFF1', tag: '#44FF88', text: '#FFFFFF' }, // Medicine
+    '5': { bg: '#E8F1FF', tag: '#4488FF', text: '#FFFFFF' }, // Accessories
+    '3': { bg: '#FFE8FF', tag: '#FF44FF', text: '#FFFFFF' }, // Grooming
     'default': { bg: '#F8F8F8', tag: '#8146C1', text: '#FFFFFF' }
 };
 
